@@ -33,7 +33,7 @@ class ConfigParams(object):
         self.break_duration = IntVar()
 
         # Default values
-        self.config_file_path.set("conf_files/p300.cfg")
+        self.config_file_path.set("conf_files/default.cfg")
 
         try:
             self.read_from_file()
