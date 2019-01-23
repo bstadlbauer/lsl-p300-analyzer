@@ -398,8 +398,8 @@ class MainWindow(object):
         self.flash_mode_label = Label(self.master, text="Flashmode:")
         self.flash_mode_label.grid(row=9, column=0)
 
-        self.flash_mode_1_rb = Radiobutton(self.master, text="Rows and Columns", variable=self.config.flash_mode,
-                                           value=1)
+        self.flash_mode_1_rb = Radiobutton(self.master, text="Rows and Columns (Sequence not pseudorandom yet!)",
+                                           variable=self.config.flash_mode, value=1)
         self.flash_mode_1_rb.grid(row=9, column=1, sticky=W)
         self.changeable_widgets.append(self.flash_mode_1_rb)
 
