@@ -14,6 +14,8 @@ import numpy as np
 from PIL import ImageTk, Image
 from pylsl import StreamInfo, StreamOutlet, local_clock, IRREGULAR_RATE
 
+MAX_FLASHES = 10000  # Maximum number of flashed images. Window will stop afterwards
+
 
 class ConfigParams(object):
 
@@ -188,7 +190,7 @@ class P300Window(object):
 
             number_buffer = deque(maxlen=distance_between_similar_elements)
 
-            for _ in range(0, 100000):
+            for _ in range(0, MAX_FLASHES):
                 while True:
                     new_number = np.random.randint(0, maximum_number, 1)
                     if bool(number_buffer.count(new_number[0])) is False:
