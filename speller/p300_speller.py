@@ -1,8 +1,15 @@
-'''
-Created on Mar 23, 2017
+"""Script that starts a P300 Speller. Run with 'python p300_speller' to show config window.
 
-@author: bstad
-'''
+Default configuration loaded at startup is stored in /config_files/default.cfg. Creates an LSL stream of type
+'P300_Marker' with one channel of 'int8' sending a marker every time an image flashes.
+
+The script consists of three main classes.
+ConfigParams: Stores all config parameters that are set in the configuration GUI
+MainWindow: The main configuration window, launched at startup
+P300Window: All logic concerning the Image flashing window. E.g. the flash-sequence is generated here.
+"""
+
+
 import configparser
 import glob
 import os
@@ -18,6 +25,7 @@ MAX_FLASHES = 10000  # Maximum number of flashed images. Window will stop afterw
 
 
 class ConfigParams(object):
+    """Stores all parameters that can be set in the MainWindow. Acts as model in MVC pattern."""
 
     def __init__(self):
         self.config_parser = configparser.RawConfigParser()
@@ -43,6 +51,7 @@ class ConfigParams(object):
             print('Config file {} not found'.format(self.config_file_path.get()))
 
     def save_to_file(self):
+        """Saves the current configuration to self.config_file_path"""
         try:
             self.config_parser.add_section('Parameters')
         except configparser.DuplicateSectionError:
@@ -62,6 +71,7 @@ class ConfigParams(object):
             self.config_parser.write(configfile)
 
     def read_from_file(self):
+        """Loads all configuration parameters from self.config_file_path"""
         self.config_parser.read(self.config_file_path.get())
 
         self.imagesize.set(self.config_parser.getint('Parameters', 'Imagesize'))
@@ -75,8 +85,198 @@ class ConfigParams(object):
         self.break_duration.set(self.config_parser.getint('Parameters', 'Break duration'))
 
 
+class MainWindow(object):
+    """Handles all the configuration and starts flashing window
+
+    Args:
+        master: Tkinter root window
+
+    """
+
+    def __init__(self, master: Tk):
+        self.master = master
+        master.title('P300 speller configuration')
+
+        self.p300_window = None
+
+        # Variables
+        self.usable_images = []
+        self.image_labels = []
+        self.flash_sequence = []
+        self.flash_image = None
+        self.sequence_number = 0
+        self.lsl_output = None
+
+        self.config = ConfigParams()
+
+        # Widget definition
+        self.changeable_widgets = []
+
+        self.config_file_label = Label(self.master, text='Config File:')
+        self.config_file_label.grid(row=0, column=0)
+
+        self.config_file_entry = Entry(self.master, textvariable=self.config.config_file_path)
+        self.config_file_entry.grid(row=0, column=1, sticky=EW)
+        self.changeable_widgets.append(self.config_file_entry)
+
+        self.open_conf_btn = Button(self.master, text='Open config file',
+                                    command=lambda: self.open_file_update_entry(self.config.config_file_path))
+        self.open_conf_btn.grid(row=0, column=2, sticky=EW)
+        self.changeable_widgets.append(self.open_conf_btn)
+
+        self.use_conf_btn = Button(self.master, text='Apply', command=self.config.read_from_file)
+        self.use_conf_btn.grid(row=0, column=3)
+        self.changeable_widgets.append(self.use_conf_btn)
+
+        self.save_settings_btn = Button(self.master, text='Save', command=self.config.save_to_file)
+        self.save_settings_btn.grid(row=0, column=4)
+        self.changeable_widgets.append(self.save_settings_btn)
+
+        self.images_folder_label = Label(self.master, text='Images folder:')
+        self.images_folder_label.grid(row=1, column=0)
+
+        self.images_folder_entry = Entry(self.master, textvariable=self.config.images_folder_path)
+        self.images_folder_entry.grid(row=1, column=1, sticky=EW)
+        self.changeable_widgets.append(self.images_folder_entry)
+
+        self.open_images_dir_btn = Button(self.master, text='Open image folder',
+                                          command=lambda: self.open_folder_update_entry(
+                                              self.config.images_folder_path))
+        self.open_images_dir_btn.grid(row=1, column=2, sticky=EW)
+        self.changeable_widgets.append(self.open_images_dir_btn)
+
+        self.flash_image_label = Label(self.master, text='Flash image:')
+        self.flash_image_label.grid(row=2, column=0)
+
+        self.flash_image_file_entry = Entry(self.master, textvariable=self.config.flash_image_path)
+        self.flash_image_file_entry.grid(row=2, column=1, sticky=EW)
+        self.changeable_widgets.append(self.flash_image_file_entry)
+
+        self.open_flash_dir_btn = Button(self.master, text='Open image',
+                                         command=lambda: self.open_file_update_entry(
+                                             self.config.flash_image_path))
+        self.open_flash_dir_btn.grid(row=2, column=2, sticky=EW)
+        self.changeable_widgets.append(self.open_flash_dir_btn)
+
+        self.imagesize_label = Label(self.master, text='Imagesize (px):')
+        self.imagesize_label.grid(row=3, column=0)
+
+        self.imagesize_entry = Entry(self.master, textvariable=self.config.imagesize)
+        self.imagesize_entry.grid(row=3, column=1, sticky=W)
+        self.changeable_widgets.append(self.imagesize_entry)
+
+        self.number_of_rows_label = Label(self.master, text='Number of rows:')
+        self.number_of_rows_label.grid(row=4, column=0)
+
+        self.number_of_rows_entry = Entry(self.master, textvariable=self.config.number_of_rows)
+        self.number_of_rows_entry.grid(row=4, column=1, sticky=W)
+        self.changeable_widgets.append(self.number_of_rows_entry)
+
+        self.number_of_columns_label = Label(self.master, text='Number of columns:')
+        self.number_of_columns_label.grid(row=5, column=0)
+
+        self.number_of_columns_entry = Entry(self.master, textvariable=self.config.number_of_columns)
+        self.number_of_columns_entry.grid(row=5, column=1, sticky=W)
+        self.changeable_widgets.append(self.number_of_columns_entry)
+
+        self.lsl_streamname_label = Label(self.master, text='LSL Streamname:')
+        self.lsl_streamname_label.grid(row=6, column=0)
+
+        self.lsl_streamname_entry = Entry(self.master, textvariable=self.config.lsl_streamname)
+        self.lsl_streamname_entry.grid(row=6, column=1, sticky=W)
+        self.changeable_widgets.append(self.lsl_streamname_entry)
+
+        self.flash_duration_label = Label(self.master, text='Flash duration (ms):')
+        self.flash_duration_label.grid(row=7, column=0)
+
+        self.flash_duration_entry = Entry(self.master, textvariable=self.config.flash_duration)
+        self.flash_duration_entry.grid(row=7, column=1, sticky=W)
+        self.changeable_widgets.append(self.flash_duration_entry)
+
+        self.break_duration_label = Label(self.master, text='Break duration (ms):')
+        self.break_duration_label.grid(row=8, column=0)
+
+        self.break_duration_entry = Entry(self.master, textvariable=self.config.break_duration)
+        self.break_duration_entry.grid(row=8, column=1, sticky=W)
+        self.changeable_widgets.append(self.break_duration_entry)
+
+        self.flash_mode_label = Label(self.master, text='Flashmode:')
+        self.flash_mode_label.grid(row=9, column=0)
+
+        self.flash_mode_1_rb = Radiobutton(self.master,
+                                           text='Rows and Columns (Sequence not pseudorandom yet!)',
+                                           variable=self.config.flash_mode, value=1)
+        self.flash_mode_1_rb.grid(row=9, column=1, sticky=W)
+        self.changeable_widgets.append(self.flash_mode_1_rb)
+
+        self.flash_mode_2_rb = Radiobutton(self.master, text='Single images', variable=self.config.flash_mode,
+                                           value=2)
+        self.flash_mode_2_rb.grid(row=10, column=1, sticky=W)
+        self.changeable_widgets.append(self.flash_mode_2_rb)
+        self.set_flash_mode_rbs()
+
+        self.text_console = Text(self.master)
+        self.text_console.grid(row=11, column=0, rowspan=4, columnspan=5)
+        self.text_console.configure(state='disabled')
+
+        self.close_button = Button(self.master, text='Close', command=master.quit)
+        self.close_button.grid(row=15, column=0)
+
+        self.open_button = Button(self.master, text='Open', command=self.open_p300_window)
+        self.open_button.grid(row=15, column=3)
+        self.changeable_widgets.append(self.open_button)
+
+    def set_flash_mode_rbs(self):
+        if self.config.flash_mode.get() is 1:
+            self.flash_mode_1_rb.select()
+        else:
+            self.flash_mode_2_rb.select()
+
+    def open_folder_update_entry(self, entry_var):
+        new_path = filedialog.askdirectory()
+        if new_path is not '':
+            entry_var.set(new_path)
+
+    def open_file_update_entry(self, entry_var):
+        new_path = filedialog.askopenfilename()
+        if new_path is not '':
+            entry_var.set(new_path)
+
+    def print_to_console(self, text_to_print):
+        if not isinstance(text_to_print, str):
+            text_to_print = str(text_to_print)
+
+        self.text_console.configure(state='normal')
+        self.text_console.insert('end', text_to_print + '\n')
+        self.text_console.configure(state='disabled')
+
+    def disable_all_widgets(self):
+        for widget in self.changeable_widgets:
+            widget.configure(state='disabled')
+        self.master.iconify()
+
+    def enable_all_widgets(self):
+        for widget in self.changeable_widgets:
+            widget.configure(state='normal')
+        self.master.deiconify()
+
+    def open_p300_window(self):
+        p300_window_master = Toplevel(self.master)
+        self.p300_window = P300Window(p300_window_master, self, self.config)
+        self.disable_all_widgets()
+
+
 class P300Window(object):
-    def __init__(self, master, parent, config):
+    """All logic for the image flashing window.
+
+    Args:
+        master: Tkinter Toplevel element
+        parent: Parent that opened the window
+        config: ConfigParams instance
+
+    """
+
+    def __init__(self, master: Toplevel, parent: MainWindow, config: ConfigParams):
         self.master = master
         self.parent = parent
 
@@ -281,186 +481,8 @@ class P300Window(object):
         self.master.destroy()
 
 
-class MainWindow(object):
-    '''
-    classdocs
-    '''
-
-    def __init__(self, master):
-        '''
-        Constructor
-        '''
-
-        self.master = master
-        master.title('P300 speller configuration')
-
-        self.p300_window = None
-
-        # Variables
-        self.usable_images = []
-        self.image_labels = []
-        self.flash_sequence = []
-        self.flash_image = None
-        self.sequence_number = 0
-        self.lsl_output = None
-
-        self.config = ConfigParams()
-
-        # Widget definition
-        self.changeable_widgets = []
-
-        self.config_file_label = Label(self.master, text='Config File:')
-        self.config_file_label.grid(row=0, column=0)
-
-        self.config_file_entry = Entry(self.master, textvariable=self.config.config_file_path)
-        self.config_file_entry.grid(row=0, column=1, sticky=EW)
-        self.changeable_widgets.append(self.config_file_entry)
-
-        self.open_conf_btn = Button(self.master, text='Open config file',
-                                    command=lambda: self.open_file_update_entry(self.config.config_file_path))
-        self.open_conf_btn.grid(row=0, column=2, sticky=EW)
-        self.changeable_widgets.append(self.open_conf_btn)
-
-        self.use_conf_btn = Button(self.master, text='Apply', command=self.config.read_from_file)
-        self.use_conf_btn.grid(row=0, column=3)
-        self.changeable_widgets.append(self.use_conf_btn)
-
-        self.save_settings_btn = Button(self.master, text='Save', command=self.config.save_to_file)
-        self.save_settings_btn.grid(row=0, column=4)
-        self.changeable_widgets.append(self.save_settings_btn)
-
-        self.images_folder_label = Label(self.master, text='Images folder:')
-        self.images_folder_label.grid(row=1, column=0)
-
-        self.images_folder_entry = Entry(self.master, textvariable=self.config.images_folder_path)
-        self.images_folder_entry.grid(row=1, column=1, sticky=EW)
-        self.changeable_widgets.append(self.images_folder_entry)
-
-        self.open_images_dir_btn = Button(self.master, text='Open image folder',
-                                          command=lambda: self.open_folder_update_entry(self.config.images_folder_path))
-        self.open_images_dir_btn.grid(row=1, column=2, sticky=EW)
-        self.changeable_widgets.append(self.open_images_dir_btn)
-
-        self.flash_image_label = Label(self.master, text='Flash image:')
-        self.flash_image_label.grid(row=2, column=0)
-
-        self.flash_image_file_entry = Entry(self.master, textvariable=self.config.flash_image_path)
-        self.flash_image_file_entry.grid(row=2, column=1, sticky=EW)
-        self.changeable_widgets.append(self.flash_image_file_entry)
-
-        self.open_flash_dir_btn = Button(self.master, text='Open image',
-                                         command=lambda: self.open_file_update_entry(self.config.flash_image_path))
-        self.open_flash_dir_btn.grid(row=2, column=2, sticky=EW)
-        self.changeable_widgets.append(self.open_flash_dir_btn)
-
-        self.imagesize_label = Label(self.master, text='Imagesize (px):')
-        self.imagesize_label.grid(row=3, column=0)
-
-        self.imagesize_entry = Entry(self.master, textvariable=self.config.imagesize)
-        self.imagesize_entry.grid(row=3, column=1, sticky=W)
-        self.changeable_widgets.append(self.imagesize_entry)
-
-        self.number_of_rows_label = Label(self.master, text='Number of rows:')
-        self.number_of_rows_label.grid(row=4, column=0)
-
-        self.number_of_rows_entry = Entry(self.master, textvariable=self.config.number_of_rows)
-        self.number_of_rows_entry.grid(row=4, column=1, sticky=W)
-        self.changeable_widgets.append(self.number_of_rows_entry)
-
-        self.number_of_columns_label = Label(self.master, text='Number of columns:')
-        self.number_of_columns_label.grid(row=5, column=0)
-
-        self.number_of_columns_entry = Entry(self.master, textvariable=self.config.number_of_columns)
-        self.number_of_columns_entry.grid(row=5, column=1, sticky=W)
-        self.changeable_widgets.append(self.number_of_columns_entry)
-
-        self.lsl_streamname_label = Label(self.master, text='LSL Streamname:')
-        self.lsl_streamname_label.grid(row=6, column=0)
-
-        self.lsl_streamname_entry = Entry(self.master, textvariable=self.config.lsl_streamname)
-        self.lsl_streamname_entry.grid(row=6, column=1, sticky=W)
-        self.changeable_widgets.append(self.lsl_streamname_entry)
-
-        self.flash_duration_label = Label(self.master, text='Flash duration (ms):')
-        self.flash_duration_label.grid(row=7, column=0)
-
-        self.flash_duration_entry = Entry(self.master, textvariable=self.config.flash_duration)
-        self.flash_duration_entry.grid(row=7, column=1, sticky=W)
-        self.changeable_widgets.append(self.flash_duration_entry)
-
-        self.break_duration_label = Label(self.master, text='Break duration (ms):')
-        self.break_duration_label.grid(row=8, column=0)
-
-        self.break_duration_entry = Entry(self.master, textvariable=self.config.break_duration)
-        self.break_duration_entry.grid(row=8, column=1, sticky=W)
-        self.changeable_widgets.append(self.break_duration_entry)
-
-        self.flash_mode_label = Label(self.master, text='Flashmode:')
-        self.flash_mode_label.grid(row=9, column=0)
-
-        self.flash_mode_1_rb = Radiobutton(self.master, text='Rows and Columns (Sequence not pseudorandom yet!)',
-                                           variable=self.config.flash_mode, value=1)
-        self.flash_mode_1_rb.grid(row=9, column=1, sticky=W)
-        self.changeable_widgets.append(self.flash_mode_1_rb)
-
-        self.flash_mode_2_rb = Radiobutton(self.master, text='Single images', variable=self.config.flash_mode,
-                                           value=2)
-        self.flash_mode_2_rb.grid(row=10, column=1, sticky=W)
-        self.changeable_widgets.append(self.flash_mode_2_rb)
-        self.set_flash_mode_rbs()
-
-        self.text_console = Text(self.master)
-        self.text_console.grid(row=11, column=0, rowspan=4, columnspan=5)
-        self.text_console.configure(state='disabled')
-
-        self.close_button = Button(self.master, text='Close', command=master.quit)
-        self.close_button.grid(row=15, column=0)
-
-        self.open_button = Button(self.master, text='Open', command=self.open_p300_window)
-        self.open_button.grid(row=15, column=3)
-        self.changeable_widgets.append(self.open_button)
-
-    def set_flash_mode_rbs(self):
-        if self.config.flash_mode.get() is 1:
-            self.flash_mode_1_rb.select()
-        else:
-            self.flash_mode_2_rb.select()
-
-    def open_folder_update_entry(self, entry_var):
-        new_path = filedialog.askdirectory()
-        if new_path is not '':
-            entry_var.set(new_path)
-
-    def open_file_update_entry(self, entry_var):
-        new_path = filedialog.askopenfilename()
-        if new_path is not '':
-            entry_var.set(new_path)
-
-    def print_to_console(self, text_to_print):
-        if not isinstance(text_to_print, str):
-            text_to_print = str(text_to_print)
-
-        self.text_console.configure(state='normal')
-        self.text_console.insert('end', text_to_print + '\n')
-        self.text_console.configure(state='disabled')
-
-    def disable_all_widgets(self):
-        for widget in self.changeable_widgets:
-            widget.configure(state='disabled')
-        self.master.iconify()
-
-    def enable_all_widgets(self):
-        for widget in self.changeable_widgets:
-            widget.configure(state='normal')
-        self.master.deiconify()
-
-    def open_p300_window(self):
-        p300_window_master = Toplevel(self.master)
-        self.p300_window = P300Window(p300_window_master, self, self.config)
-        self.disable_all_widgets()
-
-
 if __name__ == '__main__':
     root = Tk()
+    print(type(root))
     main_window = MainWindow(root)
     root.mainloop()
