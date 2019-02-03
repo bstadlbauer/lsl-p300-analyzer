@@ -1,16 +1,36 @@
-'''
-Created on May 1, 2017
-
-@author: bstad
-'''
+import multiprocessing as mp
 import time
 from threading import Thread
+from typing import Dict
 
 import numpy as np
 
+import analyzer.data
+
 
 class AnalysisThread(Thread):
-    def __init__(self, data, connect_dict, message_q, plotting_queue, axis_queue):
+    """Thread doing all the heavy lifting in the averaging and classification
+
+    Data is taken from an analyzer.data.RecordData object (AnalysisThread performs read only operations).
+    Averaged data is pushed into self.plotting_queue, if y-axis limits are changed in GUI this is registered here
+    and new limits are pushed into self.axis_queue
+
+    Args:
+        connect_dict: Instance of multiprocessing.Manager().dict(). Holds all the configuration and variables from
+            the GUI
+        message_q: One can push elements that should be printed in the GUI here
+        plotting_queue: This thread will push new y-values that should be plotted into this queue. Elements pushed are
+            of type numpy.array and have shape (num_classes, samplerate) as one second (= samplerate samples) are
+            plotted.
+        axis_queue: This thread will push new y-axis limits into this queue. The format should be Tuple[min_y, max_y]
+
+    """
+
+    def __init__(self, data: analyzer.data.RecordedData,
+                 connect_dict: Dict,
+                 message_q: mp.Queue,
+                 plotting_queue: mp.Queue,
+                 axis_queue: mp.Queue):
         Thread.__init__(self)
 
         self.data = data
@@ -24,7 +44,8 @@ class AnalysisThread(Thread):
         self.axes = None
         self.lines = []
 
-    def create_mapped_markers(self, marker, marker_ts, eeg_ts):
+    @staticmethod
+    def create_mapped_markers(marker, marker_ts, eeg_ts):
         y_axis = range(len(eeg_ts))
         coeff = np.polyfit(eeg_ts, y_axis, 1)
 
@@ -33,10 +54,6 @@ class AnalysisThread(Thread):
         # Hack to prevent last element from being rounded up and being out of bounds
         out_of_bounds = marker_ind - len(eeg_ts)
         out_of_bounds_ind = out_of_bounds >= 0
-
-        if out_of_bounds.any():
-            # TODO: Check if this is really an issue
-            pass
 
         marker_ind[out_of_bounds_ind] = len(eeg_ts) - 1
         if marker_ind[-1] == len(eeg_ts):

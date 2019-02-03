@@ -1,21 +1,29 @@
-'''
-Created on Apr 12, 2017
-
-@author: bstad
-'''
 from threading import Thread
+from typing import Callable, Optional, Dict
+
+from pylsl import pylsl
 
 
 class LSLReceiverThread(Thread):
-    '''
-    classdocs
-    '''
+    """Worker that reveives samples from an LSL stream
 
-    def __init__(self, lsl_inlet, sample_func, sample_ts_func, connect_dict=None):
-        ''' 
-        Constructor
-        '''
-        Thread.__init__(self);
+    Args:
+        lsl_inlet: LSL stream inlet
+        sample_func: Function that will be called every time a new sample arrives. Should take one argument which is
+            the sample
+        sample_ts_func: Function that will be called every time a new sample arrives. Should take one argument which
+            is the current timestamp of a sample.
+        connect_dict: Connection dict created with multiprocessing.Manager().dict() that holds information shared
+            between all processes and threads. Optional, defaults to None.
+
+    """
+
+    def __init__(self,
+                 lsl_inlet: pylsl.StreamInlet,
+                 sample_func: Callable,
+                 sample_ts_func: Callable,
+                 connect_dict: Optional[Dict] = None):
+        Thread.__init__(self)
         self.lsl_stream_inlet = lsl_inlet
         self.sample_func = sample_func
         self.sample_ts_func = sample_ts_func
@@ -26,10 +34,8 @@ class LSLReceiverThread(Thread):
         self.receive_data()
 
     def receive_data(self):
-        """Receives the data from the stream and puts it into the queue"""
         # First call of inlet correction is slower. Called once before "real"
         # use
-
         self.lsl_stream_inlet.time_correction()
 
         num_samples = 0

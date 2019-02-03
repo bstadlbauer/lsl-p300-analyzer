@@ -1,21 +1,20 @@
-'''
-Created on May 11, 2017
-
-@author: bstad
-'''
 import numpy as np
 from scipy import signal
 
 
 class CustomBPFilter(object):
-    '''
-    classdocs
-    '''
+    """Wrapper for a scipy.signal.lfilter using cofficients from scipy.signal.butter
 
-    def __init__(self, samplerate, num_chan, order, cutoff_low, cutoff_high):
-        '''
-        Constructor
-        '''
+    Args:
+        samplerate: Samplerate of the data
+        num_chan: Number of channels
+        order: Filter order
+        cutoff_low: Low cutoff frequency in Hz
+        cutoff_high: High cutoff frequency in Hz
+
+    """
+
+    def __init__(self, samplerate: int, num_chan: int, order: int, cutoff_low: int, cutoff_high: int):
         self.samplerate = samplerate
         self.num_chan = num_chan
 

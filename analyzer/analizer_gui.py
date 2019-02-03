@@ -1,26 +1,45 @@
-'''
-Created on Mar 26, 2017
-
-@author: bstad
-'''
 import multiprocessing as mp
+from typing import Dict
 
 from pylsl import resolve_byprop
 
 
 class MainWindow(mp.Process):
-    '''
-    classdocs
-    '''
+    """Defines the main control window and all its control logic.
 
-    def __init__(self, connector_dict, message_q, start_recording_e, start_analysis_e, connected_e,
-                 ready_for_connection_e, save_e):
-        '''
-        Constructor
-        '''
+    As Tkinter only allows to create root windwo (Tk()) in the main process, this is implemented as its own
+    subprocess that will open the window with a call to self.run()
+
+    Args:
+        connector_dict: Dictionary create by calling multiprocessing.Manger().dict()
+        message_q: Queue that will be polled every few seconds. Elements in queue will be plotted to the internal
+            text field.
+        start_analysis_e: Event signaling if analysis can be started
+        connected_e: Event signaling that LSL streams are connected
+        ready_for_connection_e: Event signaling that LSL streams have been selected in GUI
+        save_e: Event signaling that data should be saved.
+
+    """
+
+    def __init__(self, connector_dict: Dict,
+                 message_q: mp.Queue,
+                 start_recording_e: mp.Event,
+                 start_analysis_e: mp.Event,
+                 connected_e: mp.Event,
+                 ready_for_connection_e: mp.Event,
+                 save_e: mp.Event):
         super().__init__()
+        self.connector_dict = connector_dict
+        self.message_q = message_q
+        self.start_recording_e = start_recording_e
+        self.start_analysis_e = start_analysis_e
+        self.ready_for_connection_e = ready_for_connection_e
+        self.connected_e = connected_e
+        self.save_e = save_e
+
         self.master = None
 
+        # Parameters
         self.eeg_stream = None
         self.eeg_streams_dict = None
         self.marker_stream = None
@@ -34,15 +53,6 @@ class MainWindow(mp.Process):
         self.filter_check = None
         self.squared_check = None
         self.connected = None
-
-        # Connector Process
-        self.connector_dict = connector_dict
-        self.message_q = message_q
-        self.start_recording_e = start_recording_e
-        self.start_analysis_e = start_analysis_e
-        self.ready_for_connection_e = ready_for_connection_e
-        self.connected_e = connected_e
-        self.save_e = save_e
 
         # Widgets
         self.eeg_stream_label = None
@@ -138,7 +148,7 @@ class MainWindow(mp.Process):
                                                                              self.marker_stream))
         self.marker_stream_button.grid(row=1, column=2)
 
-        self.filter_checkbutton_label = Label(self.master, text='Filter (Butter, Order 1, Cutoff: 0.1, 10):')
+        self.filter_checkbutton_label = Label(self.master, text='Filter (Butter, Order 4, Cutoff: 1, 30):')
         self.filter_checkbutton_label.grid(row=2, column=0)
 
         self.filter_checkbutton = Checkbutton(self.master, variable=self.filter_check, text='')
@@ -279,7 +289,7 @@ class MainWindow(mp.Process):
                               ' streams... (timeout = ' + str(timeout) + ' seconds)')
 
         streams = resolve_byprop('type', stream_type, timeout=timeout)
-        if streams == []:
+        if not streams:
             self.print_to_console('No stream found.')
             return
 
@@ -316,6 +326,7 @@ class MainWindow(mp.Process):
             self.print_to_console(self.message_q.get())
         self.master.after(500, self.print_from_queue)
 
+    # noinspection PyUnusedLocal
     def update_connector_dict(self, event=None):
         self.connector_dict['update interval'] = self.update_interval.get()
         self.connector_dict['channel select'] = self.channel_select.get()
