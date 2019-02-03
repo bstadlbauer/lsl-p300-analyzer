@@ -4,7 +4,10 @@ Created on Apr 14, 2017
 @author: bstad
 '''
 import multiprocessing as mp
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 from pylsl import StreamInlet, resolve_stream
 
 from analyzer.analizer_gui import MainWindow
@@ -87,9 +90,6 @@ class ConnectorProc(object):
         self.message_q.put(message)
         
     def run(self):
-        # while True:
-        #     print(self.ready_for_connection_e)
-        #     time.sleep(2)
         self.ready_for_connection_e.wait()
         self.create_inlets()
         self.update_lsl_metadata()
@@ -109,8 +109,11 @@ class ConnectorProc(object):
         
         self.lsl_rec_threads.append(eeg_thread)
         self.lsl_rec_threads.append(marker_thread)
-        
-        self.analysis_thread = AnalysisThread(self.recorded_data, self.connector_dict, self.message_q)
+
+        data_to_plotter_queue = mp.Queue()
+        axis_to_plotter_queue = mp.Queue()
+        self.analysis_thread = AnalysisThread(self.recorded_data, self.connector_dict, self.message_q,
+                                              data_to_plotter_queue, axis_to_plotter_queue)
         
         self.connected_e.set()
         
@@ -118,13 +121,75 @@ class ConnectorProc(object):
 
         for thread in self.lsl_rec_threads:
             thread.start()
-            
+
         self.start_analysis_e.wait()
+        samplerate = self.connector_dict["samplerate"]
+        start_ylim = self.connector_dict["y lim"]
+        num_rows = self.connector_dict["num rows"]
+        num_cols = self.connector_dict["num cols"]
+        plotter = Plotter(samplerate, start_ylim, num_rows, num_cols, data_to_plotter_queue, axis_to_plotter_queue)
         
         self.analysis_thread.start()
-        
-        while True: 
-            
-            self.save_e.wait()
-            self.recorded_data.save(self.connector_dict["savefile"])
-            self.save_e.clear()
+
+        while True:
+            plotter.udpate_axis_if_possible()
+            plotter.update_data_if_possible()
+
+            if self.save_e.is_set():
+                self.recorded_data.save(self.connector_dict["savefile"])
+                self.save_e.clear()
+            time.sleep(0.1)
+
+
+class Plotter(object):
+    def __init__(self, samplerate, start_ylim, num_rows, num_cols, data_queue, axis_queue):
+        self.samplerate = samplerate
+        self.num_rows = num_rows
+        self.num_cols = num_cols
+
+        self.data_queue = data_queue
+        self.axis_queue = axis_queue
+
+        self.create_figure(start_ylim)
+
+    def update_plot(self, avg_trials):
+        for i, line in enumerate(self.lines):
+            line.set_ydata(avg_trials[i, :])
+
+        self.figure.canvas.draw()
+        self.figure.canvas.flush_events()
+
+    def create_figure(self, ylim):
+        # Turn on interactive plotting
+        plt.ion()
+
+        self.figure, self.axes = plt.subplots(self.num_rows, self.num_cols, sharex='col', sharey='row')
+
+        x_axis = np.arange(int(self.samplerate)) / self.samplerate * 1000  # Show one second
+        y = np.zeros(int(self.samplerate))
+
+        self.lines = []
+        for row in self.axes:
+            for col in row:
+                line, = col.plot(x_axis, y)
+                self.lines.append(line)
+                col.set_ylim(ylim)
+
+        figManager = plt.get_current_fig_manager()
+        figManager.window.showMaximized()
+        self.figure.canvas.draw()
+        self.figure.canvas.flush_events()
+        # plt.show(block=False)
+
+    def update_axes(self, ylim):
+        for row in self.axes:
+            for col in row:
+                col.set_ylim(ylim)
+
+    def update_data_if_possible(self):
+        if not self.data_queue.empty():
+            self.update_plot(self.data_queue.get())
+
+    def udpate_axis_if_possible(self):
+        if not self.axis_queue.empty():
+            self.update_axes(self.axis_queue.get())

@@ -6,18 +6,19 @@ Created on May 1, 2017
 import time
 from threading import Thread
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 
 class AnalysisThread(Thread):
-    def __init__(self, data, connect_dict, message_q):
+    def __init__(self, data, connect_dict, message_q, plotting_queue, axis_queue):
         Thread.__init__(self)
 
         self.data = data
         self.connect_dict = connect_dict
         self.samplerate = connect_dict["samplerate"]
         self.message_q = message_q
+        self.plotting_queue = plotting_queue
+        self.axis_queue = axis_queue
 
         self.figure = None
         self.axes = None
@@ -125,49 +126,10 @@ class AnalysisThread(Thread):
     def print_to_console(self, message):
         self.message_q.put(message)
 
-    def update_plot(self, avg_trials):
-        channel_nr = self.connect_dict["channel select"]
-
-        for i, line in enumerate(self.lines):
-            line.set_ydata(avg_trials[i, :, channel_nr])
-
-        self.figure.canvas.draw()
-        self.figure.canvas.flush_events()
-
-    def create_figure(self, ylim):
-        num_rows = self.connect_dict["num rows"]
-        num_cols = self.connect_dict["num cols"]
-
-        # Turn on interactive plotting
-        plt.ion()
-
-        self.figure, self.axes = plt.subplots(num_rows, num_cols, sharex='col', sharey='row')
-
-        x_axis = np.arange(int(self.samplerate)) / self.samplerate * 1000
-#         y = np.zeros(self.samplerate)
-        y = np.zeros(int(self.samplerate))
-
-        self.lines = []
-        for row in self.axes:
-            for col in row:
-                line, = col.plot(x_axis, y)
-                self.lines.append(line)
-                col.set_ylim(ylim)
-
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
-        self.figure.canvas.draw()
-        self.figure.canvas.flush_events()
-        # plt.show(block=False)
-
-    def update_axes(self, ylim):
-        for row in self.axes:
-            for col in row:
-                col.set_ylim(ylim)
-
     def run(self):
         num_rows = self.connect_dict["num rows"]
         num_cols = self.connect_dict["num cols"]
+        current_ylim = self.connect_dict["y lim"]
 
         min_diff_markers = num_rows * num_cols
 
@@ -176,19 +138,18 @@ class AnalysisThread(Thread):
             self.print_to_console("Not all markers were sent yet, waiting two seconds and then retrying")
             time.sleep(2)
 
-        current_ylim = self.connect_dict["y lim"]
-        self.create_figure(current_ylim)
-
         while True:
             marker = self.data.get_marker_numpy()
             marker_ts = self.data.get_marker_ts_numpy()
             eeg = self.data.get_eeg_numpy()
             eeg_ts = self.data.get_eeg_ts_numpy()
+            print('marker', marker.shape, 'eeg', eeg.shape)
 
             mapped_markers, marker_ind = self.create_mapped_markers(marker, marker_ts, eeg_ts)
             trials, marker_short = self.split_up_trials(eeg, mapped_markers, marker_ind)
 
             avg_trials = self.avg_trials_by_marker(marker_short, trials)
+
             classification = self.classify_trials(marker_short, trials)
             # classification = 0
 
@@ -198,14 +159,16 @@ class AnalysisThread(Thread):
             print("\rCurrent classification: {}".format(classification))
 
             temp_ylim = self.connect_dict["y lim"]
+            current_channel = self.connect_dict["channel select"]
+            avg_trials = np.squeeze(avg_trials[:, :, current_channel])
+
             if current_ylim == temp_ylim:
-                # print(avg_trials.shape)
-                self.update_plot(avg_trials)
+                self.plotting_queue.put(avg_trials)
             else:
                 print("axis changed")
                 current_ylim = temp_ylim
-                self.update_axes(current_ylim)
-                self.update_plot(avg_trials)
+                self.axis_queue.put(current_ylim)
+                self.plotting_queue.put(avg_trials)
 
             time.sleep(self.connect_dict["update interval"])
 
