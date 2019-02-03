@@ -1,22 +1,17 @@
-'''
-Created on Apr 12, 2017
-
-@author: bstad
-'''
 import numpy as np
 
 from analyzer.custom_filter import CustomBPFilter
 
 
 class RecordedData(object):
-    '''
-    classdocs
-    '''
+    """Container that holds all data shared between threads and logic for processing samples.
 
-    def __init__(self, filter_bool):
-        '''
-        Constructor
-        '''
+    Args:
+        filter_bool: Boolean that determines if data should be filtered or not
+
+    """
+
+    def __init__(self, filter_bool: bool):
         self.eeg_data = []
         self.eeg_ts = []
         self.marker_data = []
@@ -48,11 +43,11 @@ class RecordedData(object):
             numpy_sample = np.array(sample)
             numpy_sample = numpy_sample[np.newaxis, :]
             filtered_sample = self.bandpass.filter(numpy_sample) * 1e6
-            # filtered_sample = filtered_sample - filtered_sample[0, 31]
+            # filtered_sample = filtered_sample - filtered_sample[0, 31]  # Uncomment this to set reference channel
             self.eeg_data.append(filtered_sample)
         else:
             sample = np.array(sample) * 1e6
-            # sample = sample - sample[31]
+            # sample = sample - sample[31]  # Uncomment this to set reference channel
             self.eeg_data.append(sample)
 
     def append_eeg_ts(self, timestamp):
@@ -83,7 +78,7 @@ class RecordedData(object):
         return np.array(self.eeg_ts)
 
     def get_marker_numpy(self):
-        if self.marker_data == []:
+        if not self.marker_data:
             return np.zeros([1, 2])
         return np.array(self.marker_data)
 

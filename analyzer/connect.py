@@ -1,10 +1,6 @@
-'''
-Created on Apr 14, 2017
-
-@author: bstad
-'''
 import multiprocessing as mp
 import time
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,14 +13,17 @@ from analyzer.lsl_receiver_thread import LSLReceiverThread
 
 
 class ConnectorProc(object):
-    '''
-    classdocs
-    '''
+    """Entry point for the analyzer. This class glues all the parts together.
+
+    Main functionality happens in the self.run() method, which spawns all processes and threads as well as connects
+    them.
+
+    Also plotting is done here as matplotlib only allows plotting in the main process. Therefor two queues to the
+    analyzer.analysis_thread.AnalysisThread are created and periodically polled for new data.
+
+    """
 
     def __init__(self):
-        '''
-        Constructor
-        '''
         self.eeg_inlet = None
         self.marker_inlet = None
 
@@ -143,13 +142,35 @@ class ConnectorProc(object):
 
 
 class Plotter(object):
-    def __init__(self, samplerate, start_ylim, num_rows, num_cols, data_queue, axis_queue):
+    """Main class for potting the averaged result
+
+    Args:
+        samplerate: Samplerate of the data
+        start_ylim: Limits of the y-axis to create the plot with
+        num_rows: Number of rows in the speller
+        num_cols: Number of columns in the speller
+        data_queue: Queue that will be periodically polled for new y-axis data
+        axis_queue: Queue that will be periodically polled for new y-axis limits
+
+    """
+
+    def __init__(self,
+                 samplerate: int,
+                 start_ylim: Tuple[int, int],
+                 num_rows: int,
+                 num_cols: int,
+                 data_queue: mp.Queue,
+                 axis_queue: mp.Queue):
         self.samplerate = samplerate
         self.num_rows = num_rows
         self.num_cols = num_cols
 
         self.data_queue = data_queue
         self.axis_queue = axis_queue
+
+        self.figure = None
+        self.axes = None
+        self.lines = None
 
         self.create_figure(start_ylim)
 
@@ -163,7 +184,6 @@ class Plotter(object):
     def create_figure(self, ylim):
         # Turn on interactive plotting
         plt.ion()
-
         self.figure, self.axes = plt.subplots(self.num_rows, self.num_cols, sharex='col', sharey='row')
 
         x_axis = np.arange(int(self.samplerate)) / self.samplerate * 1000  # Show one second
@@ -176,11 +196,10 @@ class Plotter(object):
                 self.lines.append(line)
                 col.set_ylim(ylim)
 
-        figManager = plt.get_current_fig_manager()
-        figManager.window.showMaximized()
+        fig_manager = plt.get_current_fig_manager()
+        fig_manager.window.showMaximized()
         self.figure.canvas.draw()
         self.figure.canvas.flush_events()
-        # plt.show(block=False)
 
     def update_axes(self, ylim):
         for row in self.axes:
