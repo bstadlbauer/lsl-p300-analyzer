@@ -3,32 +3,91 @@ Created on Mar 26, 2017
 
 @author: bstad
 '''
-import matplotlib
-
-matplotlib.use('Qt5Agg')  # MUST BE CALLED BEFORE IMPORTING plt
 import multiprocessing as mp
-from tkinter import Tk, StringVar, Text, HORIZONTAL, EW, IntVar
-from tkinter.ttk import Separator, Combobox, Button, Label, Entry, Checkbutton
 
 from pylsl import resolve_byprop
 
-from analyzer.connect import ConnectorProc
+
 # for testing:
-from analyzer.testserver import BCNIDataServer
+# from analyzer.testserver import BCNIDataServer
 
 
-class MainWindow(object):
+class MainWindow(mp.Process):
     '''
     classdocs
     '''
 
-    def __init__(self, master):
+    def __init__(self, connector_dict, message_q, start_recording_e, start_analysis_e, connected_e,
+                 ready_for_connection_e, save_e):
         '''
         Constructor
         '''
-        self.master = master
+        super().__init__()
+        self.master = None
 
-        # Parameters 
+        self.eeg_stream = None
+        self.eeg_streams_dict = None
+        self.marker_stream = None
+        self.marker_streams_dict = None
+        self.channel_select = None
+        self.update_interval = None
+        self.record_time = None
+        self.y_min = None
+        self.y_max = None
+        self.save_filename = None
+        self.filter_check = None
+        self.squared_check = None
+        self.connected = None
+
+        # Connector Process
+        self.connector_dict = connector_dict
+        self.message_q = message_q
+        self.start_recording_e = start_recording_e
+        self.start_analysis_e = start_analysis_e
+        self.ready_for_connection_e = ready_for_connection_e
+        self.connected_e = connected_e
+        self.save_e = save_e
+
+        # Widgets
+        self.eeg_stream_label = None
+        self.eeg_stream_combobox = None
+        self.eeg_stream_button = None
+        self.marker_stream_label = None
+        self.marker_stream_combobox = None
+        self.marker_stream_button = None
+        self.filter_checkbutton_label = None
+        self.filter_checkbutton = None
+        self.connect_button = None
+        self.seperator = None
+        self.start_recording_btn = None
+        self.record_time_label = None
+        self.Separator_2 = None
+        self.update_interval_label = None
+        self.update_interval_combobox = None
+        self.start_analysis_btn = None
+        self.channel_select_label = None
+        self.channel_select_combobox = None
+        self.squared_label = None
+        self.squared_checkbtn = None
+        self.update_ylim_btn = None
+        self.y_min_label = None
+        self.y_min_entry = None
+        self.y_max_label = None
+        self.y_max_entry = None
+        self.seperator = None
+        self.save_label = None
+        self.save_entry = None
+        self.save_btn = None
+        self.text_console = None
+
+    def build_main_window(self):
+        # Hack to make tkinter work in other process than main
+        from tkinter import Tk, StringVar, Text, HORIZONTAL, EW, IntVar
+        from tkinter.ttk import Separator, Combobox, Button, Label, Entry, Checkbutton
+
+        self.master = Tk()
+
+        # Parameters
         self.eeg_stream = StringVar()
         self.eeg_streams_dict = {}
         self.marker_stream = StringVar()
@@ -52,37 +111,7 @@ class MainWindow(object):
 
         self.connected = False
 
-        # Connector Process
-        manager = mp.Manager()
-        self.connector_dict = manager.dict()
-        self.connector_dict["update interval"] = self.update_interval.get()
-        self.connector_dict["channel select"] = self.channel_select.get()
-        self.connector_dict["number of channels"] = None
-        self.connector_dict["samplerate"] = None
-        self.connector_dict["eeg stramname"] = None
-        self.connector_dict["marker streamname"] = None
-        self.connector_dict["sample count"] = 0
-        self.connector_dict["num rows"] = 0
-        self.connector_dict["num cols"] = 0
-        self.connector_dict["flash mode"] = 0
-        self.connector_dict["y lim"] = [0, 100]
-        self.connector_dict["savefile"] = ["1"]
-        self.connector_dict["filter"] = 0
-        self.connector_dict["squared"] = 0
-        self.start_recording_e = mp.Event()
-        self.start_analysis_e = mp.Event()
-        self.connected_e = mp.Event()
-        self.save_e = mp.Event()
-
-        self.message_q = mp.Queue()
         self.print_from_queue()
-
-        self.connector = ConnectorProc(self.connector_dict,
-                                       self.message_q,
-                                       self.start_recording_e,
-                                       self.start_analysis_e,
-                                       self.connected_e,
-                                       self.save_e)
 
         # Widgets
         self.eeg_stream_label = Label(self.master, text="EEG LSL-stream:")
@@ -302,20 +331,25 @@ class MainWindow(object):
         self.connector_dict["squared"] = self.squared_check.get()
 
     def connect_streams(self):
-        if self.connected_e.is_set() is False:
-            self.eeg_stream_combobox.configure(state="disabled")
-            self.eeg_stream_button.configure(state="disabled")
-            self.marker_stream_combobox.configure(state="disabled")
-            self.marker_stream_button.configure(state="disabled")
-            self.filter_checkbutton.configure(state="disabled")
-            self.connect_button.configure(state="disabled")
+        self.eeg_stream_combobox.configure(state="disabled")
+        self.eeg_stream_button.configure(state="disabled")
+        self.marker_stream_combobox.configure(state="disabled")
+        self.marker_stream_button.configure(state="disabled")
+        self.filter_checkbutton.configure(state="disabled")
+        self.connect_button.configure(state="disabled")
 
-            self.update_connector_dict()
-            self.connector.start()
+        self.update_connector_dict()
+        self.ready_for_connection_e.set()
 
-            self.connected_e.wait()
+        self.connected_e.wait()
 
-            self.start_recording_btn.configure(state="normal")
+        self.start_recording_btn.configure(state="normal")
+
+    def run(self):
+        # self.connector_dict["update interval"] = self.update_interval.get()
+        # self.connector_dict["channel select"] = self.channel_select.get()
+        self.build_main_window()
+        self.master.mainloop()
 
 
 if __name__ == '__main__':

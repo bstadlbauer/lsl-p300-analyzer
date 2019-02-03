@@ -7,31 +7,21 @@ import multiprocessing as mp
 
 from pylsl import StreamInlet, resolve_stream
 
+from analyzer.analizer_gui import MainWindow
 from analyzer.analysis_thread import AnalysisThread
 from analyzer.data import RecordedData
 from analyzer.lsl_receiver_thread import LSLReceiverThread
 
 
-class ConnectorProc(mp.Process):
+class ConnectorProc(object):
     '''
     classdocs
     '''
 
-
-    def __init__(self, connect_dict, message_q, start_recording_e, 
-                 start_analysis_e, connected_e, save_e):
+    def __init__(self):
         '''
         Constructor
         '''
-        mp.Process.__init__(self)
-        self.connector_dict = connect_dict
-        self.message_q = message_q
-        
-        self.start_recording_e = start_recording_e
-        self.start_analysis_e = start_analysis_e
-        self.connected_e = connected_e
-        self.save_e = save_e
-        
         self.eeg_inlet = None
         self.marker_inlet = None
         
@@ -39,7 +29,36 @@ class ConnectorProc(mp.Process):
         self.analysis_thread = []
         
         self.recorded_data = None
-        
+
+        manager = mp.Manager()
+        self.connector_dict = manager.dict()
+        self.connector_dict["update interval"] = None
+        self.connector_dict["channel select"] = None
+        self.connector_dict["number of channels"] = None
+        self.connector_dict["samplerate"] = None
+        self.connector_dict["eeg stramname"] = None
+        self.connector_dict["marker streamname"] = None
+        self.connector_dict["sample count"] = 0
+        self.connector_dict["num rows"] = 0
+        self.connector_dict["num cols"] = 0
+        self.connector_dict["flash mode"] = 0
+        self.connector_dict["y lim"] = [0, 100]
+        self.connector_dict["savefile"] = ["1"]
+        self.connector_dict["filter"] = 0
+        self.connector_dict["squared"] = 0
+        self.start_recording_e = mp.Event()
+        self.start_analysis_e = mp.Event()
+        self.ready_for_connection_e = mp.Event()
+        self.connected_e = mp.Event()
+        self.save_e = mp.Event()
+
+        self.message_q = mp.Queue()
+
+        self.analyzer_gui = MainWindow(self.connector_dict, self.message_q, self.start_recording_e,
+                                       self.start_analysis_e, self.connected_e, self.ready_for_connection_e,
+                                       self.save_e)
+        self.analyzer_gui.start()
+
     def create_inlets(self):
         self.eeg_inlet = self.create_inlet(self.connector_dict["eeg streamname"])
         self.marker_inlet = self.create_inlet(self.connector_dict["marker streamname"])
@@ -68,6 +87,10 @@ class ConnectorProc(mp.Process):
         self.message_q.put(message)
         
     def run(self):
+        # while True:
+        #     print(self.ready_for_connection_e)
+        #     time.sleep(2)
+        self.ready_for_connection_e.wait()
         self.create_inlets()
         self.update_lsl_metadata()
         
@@ -105,13 +128,3 @@ class ConnectorProc(mp.Process):
             self.save_e.wait()
             self.recorded_data.save(self.connector_dict["savefile"])
             self.save_e.clear()
-        
-            
-#         while True: 
-#             print(len(self.recorded_data.eeg_data), len(self.recorded_data.marker_data))
-#             time.sleep(1)
-            
-        
-        
-        
-        
