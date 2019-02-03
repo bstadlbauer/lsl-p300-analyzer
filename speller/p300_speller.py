@@ -9,7 +9,6 @@ MainWindow: The main configuration window, launched at startup
 P300Window: All logic concerning the Image flashing window. E.g. the flash-sequence is generated here.
 """
 
-
 import configparser
 import glob
 import os
@@ -479,10 +478,3 @@ class P300Window(object):
     def close_window(self):
         self.parent.enable_all_widgets()
         self.master.destroy()
-
-
-if __name__ == '__main__':
-    root = Tk()
-    print(type(root))
-    main_window = MainWindow(root)
-    root.mainloop()
