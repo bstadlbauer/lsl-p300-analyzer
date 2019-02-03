@@ -12,16 +12,16 @@ amplifier is changed, one wants to make sure the correct reference is chosen. As
 reference subtraction this is not necessary, but can easily be activated for other amplifiers changing the two 
 indicated lines in analyzer.data.RecordsData (lines are commented at the moment).
 
-##Getting started
+## Getting started
 The simplest way to start one of the packages is to use the start_[package_name] script. The setup should work out 
 of the box, however, one needs to know the number of the electrode (in the LSL stream) that should be observed. 
 Watch out, indexing for the electrodes starts at 0. 
 
 
-##Questions and Issues
+## Questions and Issues
 If there are any questions or you run into an issue, please file a 'Issue' at the top.
 
-##Contributing
+## Contributing
 If you want to contribute, please file also file an issue first where the new feature can be discussed, in general
 contribution is welcome!
 
