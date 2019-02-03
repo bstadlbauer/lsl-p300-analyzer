@@ -23,33 +23,33 @@ class BCNIDataServer(mp.Process):
         # self.data.load_file()
 
         # LSL Settings
-        self.eeg_streamname = "testeeg_stream"
-        self.marker_streamname = "marker_stream"
+        self.eeg_streamname = 'testeeg_stream'
+        self.marker_streamname = 'marker_stream'
         self.period_time = 1.0 / self.data.samplerate  # seconds
 
         # EEG stream
         self.eeg_info = StreamInfo(name=self.eeg_streamname, nominal_srate=self.data.samplerate,
-                                   type='EEG', channel_count=self.data.num_channels, channel_format="float32",
+                                   type='EEG', channel_count=self.data.num_channels, channel_format='float32',
                                    source_id='eeg_stream_test', handle=None)
         self.lsl_eeg = StreamOutlet(self.eeg_info)
 
         # Marker Stream
         self.marker_info = StreamInfo(name=self.marker_streamname, type='P300_Marker',
                                       nominal_srate=IRREGULAR_RATE,
-                                      channel_count=1, channel_format="int8",
+                                      channel_count=1, channel_format='int8',
                                       source_id='marker_stream', handle=None)
-        self.marker_info.desc().append_child_value("flash_mode", self.data.flash_mode)
-        self.marker_info.desc().append_child_value("num_rows", "6")
-        self.marker_info.desc().append_child_value("num_cols", "6")
+        self.marker_info.desc().append_child_value('flash_mode', self.data.flash_mode)
+        self.marker_info.desc().append_child_value('num_rows', '6')
+        self.marker_info.desc().append_child_value('num_cols', '6')
         self.lsl_marker = StreamOutlet(self.marker_info)
 
     def run(self):
         self.second_init()
 
         # Stream data
-        print("Server started...")
-        print("EEG samples stream: \"" + self.eeg_streamname + "\"")
-        print("P300 Markers stream: \"" + self.marker_streamname + "\"")
+        print('Server started...')
+        print('EEG samples stream: \'' + self.eeg_streamname + '\'')
+        print('P300 Markers stream: \'' + self.marker_streamname + '\'')
 
         # Hack to start later in the dataset
         self.data.set_counter(3000)
