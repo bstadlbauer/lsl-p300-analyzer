@@ -15,7 +15,7 @@ class AnalysisThread(Thread):
 
         self.data = data
         self.connect_dict = connect_dict
-        self.samplerate = connect_dict["samplerate"]
+        self.samplerate = connect_dict['samplerate']
         self.message_q = message_q
         self.plotting_queue = plotting_queue
         self.axis_queue = axis_queue
@@ -73,7 +73,7 @@ class AnalysisThread(Thread):
             trial_ind_true = np.where(markers == marker)
             trial_ind = trial_ind_true[0][-30:]
 
-            if self.connect_dict["squared"] == 1:
+            if self.connect_dict['squared'] == 1:
                 avg_trials.append(np.mean(trials[trial_ind], 0) ** 2)
             else:
                 avg_trials.append(np.mean(trials[trial_ind], 0))
@@ -92,7 +92,7 @@ class AnalysisThread(Thread):
             if np.sum(markers == marker) < epochs_for_classification:
                 return None
 
-        channel_to_use = self.connect_dict["channel select"]
+        channel_to_use = self.connect_dict['channel select']
 
         start_feature_second = 0.2
         end_feature_second = 0.5
@@ -120,15 +120,15 @@ class AnalysisThread(Thread):
         self.message_q.put(message)
 
     def run(self):
-        num_rows = self.connect_dict["num rows"]
-        num_cols = self.connect_dict["num cols"]
-        current_ylim = self.connect_dict["y lim"]
+        num_rows = self.connect_dict['num rows']
+        num_cols = self.connect_dict['num cols']
+        current_ylim = self.connect_dict['y lim']
 
         min_diff_markers = num_rows * num_cols
 
         # Do not count last 20 markers because they might not be fully recorded
         while len(set(self.data.get_marker_numpy()[:-20, 0])) < min_diff_markers:
-            self.print_to_console("Not all markers were sent yet, waiting two seconds and then retrying")
+            self.print_to_console('Not all markers were sent yet, waiting two seconds and then retrying')
             time.sleep(2)
 
         while True:
@@ -146,21 +146,21 @@ class AnalysisThread(Thread):
             classification = self.classify_trials(marker_short, trials)
             if type(classification) == int:
                 classification = classification + 1
-            self.print_to_console("Current classification: {}".format(classification))
+            self.print_to_console('Current classification: {}'.format(classification))
 
-            temp_ylim = self.connect_dict["y lim"]
-            current_channel = self.connect_dict["channel select"]
+            temp_ylim = self.connect_dict['y lim']
+            current_channel = self.connect_dict['channel select']
             avg_trials = np.squeeze(avg_trials[:, :, current_channel])
 
             if current_ylim == temp_ylim:
                 self.plotting_queue.put(avg_trials)
             else:
-                print("axis changed")
+                print('axis changed')
                 current_ylim = temp_ylim
                 self.axis_queue.put(current_ylim)
                 self.plotting_queue.put(avg_trials)
 
-            time.sleep(self.connect_dict["update interval"])
+            time.sleep(self.connect_dict['update interval'])
 
 
 def fisher_criterion(targets, non_targets):
