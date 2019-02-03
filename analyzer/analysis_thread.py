@@ -37,8 +37,6 @@ class AnalysisThread(Thread):
         if out_of_bounds.any():
             # TODO: Check if this is really an issue
             pass
-            # print("marker problem")
-        ##            print(marker_ind[out_of_bounds_ind])
 
         marker_ind[out_of_bounds_ind] = len(eeg_ts) - 1
         if marker_ind[-1] == len(eeg_ts):
@@ -67,8 +65,6 @@ class AnalysisThread(Thread):
         return trials, markers_short
 
     def avg_trials_by_marker(self, markers, trials):
-        # print(len(markers))
-        # print(len(trials))
         avg_trials = []
         markers = np.squeeze(markers)
         marker_set = list(set(list(markers)))
@@ -85,7 +81,6 @@ class AnalysisThread(Thread):
 
     def classify_trials(self, markers, trials):
         trials = np.swapaxes(trials, 0, 2)
-        # print("trials", trials.shape)
         markers = np.squeeze(markers)
         marker_set = list(set(list(markers)))
         marker_set.sort()
@@ -109,7 +104,6 @@ class AnalysisThread(Thread):
             trials_one_marker = trials[:, :, markers == marker]
             fields.append(trials_one_marker[channel_to_use, start_feature:end_feature, -epochs_for_classification:])
         fields = np.array(fields)
-        # print("fields", fields.shape)
 
         scores = []
         for field_nr, field in enumerate(fields):
@@ -120,7 +114,6 @@ class AnalysisThread(Thread):
             scores.append(fisher_criterion(target_data, non_target_data))
 
         classification_result = classify(scores)
-        # print("Result", classification_result, scores, "\n")
         return classification_result
 
     def print_to_console(self, message):
@@ -151,12 +144,9 @@ class AnalysisThread(Thread):
             avg_trials = self.avg_trials_by_marker(marker_short, trials)
 
             classification = self.classify_trials(marker_short, trials)
-            # classification = 0
-
-            # if classification is not None:
             if type(classification) == int:
                 classification = classification + 1
-            print("\rCurrent classification: {}".format(classification))
+            self.print_to_console("Current classification: {}".format(classification))
 
             temp_ylim = self.connect_dict["y lim"]
             current_channel = self.connect_dict["channel select"]

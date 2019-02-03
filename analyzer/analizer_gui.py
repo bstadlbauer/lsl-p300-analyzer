@@ -8,10 +8,6 @@ import multiprocessing as mp
 from pylsl import resolve_byprop
 
 
-# for testing:
-# from analyzer.testserver import BCNIDataServer
-
-
 class MainWindow(mp.Process):
     '''
     classdocs
@@ -350,17 +346,3 @@ class MainWindow(mp.Process):
         # self.connector_dict["channel select"] = self.channel_select.get()
         self.build_main_window()
         self.master.mainloop()
-
-
-if __name__ == '__main__':
-    test_server = BCNIDataServer("s1.mat")
-    test_server.daemon = True
-    test_server.start()
-
-    # test_server2 = BCNIDataServer("s1.mat")
-    # test_server2.daemon = True
-    # test_server2.start()
-
-    root = Tk()
-    mainwindow = MainWindow(root)
-    root.mainloop()
