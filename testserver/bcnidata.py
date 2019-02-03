@@ -1,22 +1,16 @@
-'''
-Created on Apr 15, 2017
-
-@author: bstad
-'''
 import os
 
 from scipy import io
 
 
 class BCNIData(object):
-    '''
-    classdocs
-    '''
+    """Wrapper for a recordings from the BNCI Horizon Project
 
+    Args:
+        filename: Filename to load, e.g. 's1.mat'
+
+    """
     def __init__(self, filename):
-        '''
-        Constructor
-        '''
         self.filename = filename
         self.counter = 0
 
@@ -28,6 +22,11 @@ class BCNIData(object):
         self.flash_mode = 'Single Value'
         self.samplerate = 256  # Hz
         self.num_channels = None
+
+        self.file_location = None
+        self.prefix = None
+        self.path = None
+        self.matrix = None
 
         self.load_file()
 
@@ -56,25 +55,24 @@ class BCNIData(object):
         self.timestamps = self.matrix[0]
         self.eeg_data = self.matrix[1:9]
 
-        self.markers = self.normalize_markers(self.matrix[9].astype(int))
+        self.markers = normalize_markers(self.matrix[9].astype(int))
 
-        self.target = self.normalize_markers(self.matrix[10].astype(int))
-        #         self.target = self.matrix[10].astype(int)
+        self.target = normalize_markers(self.matrix[10].astype(int))
 
         self.length = len(self.timestamps)
         self.num_channels = len(self.eeg_data)
 
-    def normalize_markers(self, markers):
-        """ Removes additional markers if there is more than one 
-        """
-        init = 2
-        new_flash_ids = markers[0:init].tolist()
-        number_of_ids = len(markers)
 
-        for i in range(init, number_of_ids):
-            if markers[i] != 0 and markers[i - 1] == 0:
-                new_flash_ids.append(markers[i])
-            else:
-                new_flash_ids.append(0)
+def normalize_markers(markers):
+    """Removes additional markers if there is more than one"""
+    init = 2
+    new_flash_ids = markers[0:init].tolist()
+    number_of_ids = len(markers)
 
-        return new_flash_ids
+    for i in range(init, number_of_ids):
+        if markers[i] != 0 and markers[i - 1] == 0:
+            new_flash_ids.append(markers[i])
+        else:
+            new_flash_ids.append(0)
+
+    return new_flash_ids
