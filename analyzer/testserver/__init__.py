@@ -1,2 +1,2 @@
-from .bcni_data_server import BCNIDataServer
-from .bcnidata import BCNIData
+from analyzer.testserver.bcni_data_server import BCNIDataServer
+from analyzer.testserver.bcnidata import BCNIData

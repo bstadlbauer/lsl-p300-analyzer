@@ -3,10 +3,10 @@ Created on Apr 12, 2017
 
 @author: bstad
 '''
-from testserver import BCNIData
 import numpy as np
-import matplotlib.pyplot as plt
-from custom_filter import CustomBPFilter
+
+from analyzer.custom_filter import CustomBPFilter
+from analyzer.testserver import BCNIData
 
 
 class RecordedData(object):

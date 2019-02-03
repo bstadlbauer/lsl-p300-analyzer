@@ -4,10 +4,13 @@ Created on Apr 14, 2017
 @author: bstad
 '''
 import multiprocessing as mp
+
 from pylsl import StreamInlet, resolve_stream
-from data import RecordedData
-from lsl_receiver_thread import LSLReceiverThread
-from analysis_thread import AnalysisThread
+
+from analyzer.analysis_thread import AnalysisThread
+from analyzer.data import RecordedData
+from analyzer.lsl_receiver_thread import LSLReceiverThread
+
 
 class ConnectorProc(mp.Process):
     '''
