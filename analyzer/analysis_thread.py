@@ -153,7 +153,6 @@ class AnalysisThread(Thread):
             marker_ts = self.data.get_marker_ts_numpy()
             eeg = self.data.get_eeg_numpy()
             eeg_ts = self.data.get_eeg_ts_numpy()
-            print('marker', marker.shape, 'eeg', eeg.shape)
 
             mapped_markers, marker_ind = self.create_mapped_markers(marker, marker_ts, eeg_ts)
             trials, marker_short = self.split_up_trials(eeg, mapped_markers, marker_ind)
@@ -172,7 +171,6 @@ class AnalysisThread(Thread):
             if current_ylim == temp_ylim:
                 self.plotting_queue.put(avg_trials)
             else:
-                print('axis changed')
                 current_ylim = temp_ylim
                 self.axis_queue.put(current_ylim)
                 self.plotting_queue.put(avg_trials)
