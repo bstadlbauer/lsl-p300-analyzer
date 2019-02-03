@@ -1,8 +1,3 @@
-'''
-Created on Mar 26, 2017
-
-@author: bstad
-'''
 import multiprocessing as mp
 import time
 
@@ -12,15 +7,22 @@ from testserver.bcnidata import BCNIData
 
 
 class BCNIDataServer(mp.Process):
+    """Server for streaming example LSL data taken from BNCI-Horizon.
 
-    def __init__(self, filename):
+    Inherits form multiprocessing.Process so instantiate and call self.start()
+
+    Args:
+        filename: This will be passed on as the filname argument to a testserver.BNCIData instance
+
+    """
+
+    def __init__(self, filename: str):
         mp.Process.__init__(self)
         self.data = BCNIData(filename)
 
+    # noinspection PyAttributeOutsideInit
     def second_init(self):
-        '''Used because otherwise multiprocessing cannot pickle object
-        '''
-        # self.data.load_file()
+        """Used because otherwise multiprocessing cannot pickle LSL instances"""
 
         # LSL Settings
         self.eeg_streamname = 'testeeg_stream'
