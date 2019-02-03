@@ -3,12 +3,14 @@ Created on Mar 26, 2017
 
 @author: bstad
 '''
-from pylsl import StreamInfo, StreamOutlet, IRREGULAR_RATE
-import time
 import multiprocessing as mp
-from bcnidata import BCNIData
+import time
 
+from pylsl import StreamInfo, StreamOutlet, IRREGULAR_RATE
 from pylsl import resolve_stream, StreamInlet
+
+from analyzer.testserver.bcnidata import BCNIData
+
 
 class BCNIDataServer(mp.Process):
     
@@ -67,7 +69,8 @@ class BCNIDataServer(mp.Process):
                 self.lsl_marker.push_sample(marker, timestamp)
             
             time.sleep(self.period_time)
-            
+
+
 if __name__ == "__main__":
     server = BCNIDataServer("s1.mat")
     server.start()
@@ -76,4 +79,3 @@ if __name__ == "__main__":
     inlet = StreamInlet(streams[0])
 #     while True:
 #         print(inlet.pull_sample())
-    

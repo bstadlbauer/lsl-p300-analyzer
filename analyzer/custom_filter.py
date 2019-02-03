@@ -6,6 +6,7 @@ Created on May 11, 2017
 import numpy as np
 from scipy import signal
 
+
 class CustomBPFilter(object):
     '''
     classdocs

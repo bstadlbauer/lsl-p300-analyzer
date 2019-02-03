@@ -4,11 +4,11 @@ Created on May 11, 2017
 @author: bstad
 '''
 
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy import matlib
-from scipy import signal
-import matplotlib.pyplot as plt
-from data import RecordedData
+
+from analyzer.data import RecordedData
 
 if __name__ == '__main__':
     samplerate = 1000 #Hz 
