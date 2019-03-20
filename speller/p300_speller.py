@@ -42,7 +42,9 @@ class ConfigParams(object):
         self.break_duration = IntVar()
 
         # Default values
-        self.config_file_path.set('conf_files/default.cfg')
+        self.config_file_path.set(
+            os.path.join(os.path.dirname(__file__), 'conf_files/default.cfg')
+            )
 
         try:
             self.read_from_file()
