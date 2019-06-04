@@ -1,6 +1,6 @@
 # P300
 A tool for teaching P300 by showing the ongoing averaging process and continuous classification. The main purpose 
-of this tool is to make show a visually show how the averaging in in a P300 paradigm works.
+of this tool is to visually show how the averaging in in a P300 paradigm works.
 
 ## Packages
 It is split up into three packages, one presenting a P300 speller,one analysing the output of the speller and 
