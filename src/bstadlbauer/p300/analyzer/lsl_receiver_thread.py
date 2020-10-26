@@ -1,5 +1,5 @@
 from threading import Thread
-from typing import Callable, Optional, Dict
+from typing import Callable, Dict, Optional
 
 from pylsl import pylsl
 
@@ -18,11 +18,13 @@ class LSLReceiverThread(Thread):
 
     """
 
-    def __init__(self,
-                 lsl_inlet: pylsl.StreamInlet,
-                 sample_func: Callable,
-                 sample_ts_func: Callable,
-                 connect_dict: Optional[Dict] = None):
+    def __init__(
+        self,
+        lsl_inlet: pylsl.StreamInlet,
+        sample_func: Callable,
+        sample_ts_func: Callable,
+        connect_dict: Optional[Dict] = None,
+    ):
         Thread.__init__(self)
         self.lsl_stream_inlet = lsl_inlet
         self.sample_func = sample_func
@@ -47,4 +49,4 @@ class LSLReceiverThread(Thread):
             num_samples += 1
 
             if self.connect_dict is not None:
-                self.connect_dict['sample count'] = num_samples
+                self.connect_dict["sample count"] = num_samples

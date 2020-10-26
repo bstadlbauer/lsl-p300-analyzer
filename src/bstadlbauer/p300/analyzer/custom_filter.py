@@ -27,7 +27,7 @@ class CustomBPFilter(object):
 
     def update_filter_coefficients(self, order, cutoff_low, cutoff_high):
         cutoff_freq_norm = np.array([cutoff_low, cutoff_high]) / (self.samplerate / 2.0)
-        [self.b, self.a] = signal.butter(order, cutoff_freq_norm, 'bandpass')
+        [self.b, self.a] = signal.butter(order, cutoff_freq_norm, "bandpass")
 
     def init_filter_delay(self):
         length = max(len(self.a), len(self.b)) - 1

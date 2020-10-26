@@ -17,5 +17,5 @@ from multiprocessing import freeze_support
 
 import matplotlib
 
-matplotlib.use('Qt5Agg')  # MUST BE CALLED BEFORE IMPORTING matplotlib.pyplot
+matplotlib.use("Qt5Agg")  # MUST BE CALLED BEFORE IMPORTING matplotlib.pyplot
 freeze_support()

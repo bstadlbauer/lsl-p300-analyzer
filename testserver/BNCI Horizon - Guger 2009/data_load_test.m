@@ -1,6 +1,6 @@
 clear all, close all, clc
 
-%% Test for data loading 
+%% Test for data loading
 
 s1 = load('data/s1');
 
