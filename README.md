@@ -1,10 +1,12 @@
-# P300
+# P300 Analyzer
+> *Note*: As of 2020-10-26, the speller has been moved to its own
+[repository](https://github.com/bstadlbauer/lsl-p300-speller) and this repository has been renamed from `p300` to
+`lsl-p300-analyzer`.
+
 A tool for teaching P300 by showing the ongoing averaging process and continuous classification. The main purpose
 of this tool is to visually show how the averaging in in a P300 paradigm works.
 
 ## Structure
-The project is split up into two main components, a `speller` (`bstadlbauer.p300.speller`) presenting the P300 paradigm
-and an `analyzer` (`bstadlbauer.p300.analyzer`) visualizing the averaging process.
 Connections between the components is made using [LSL](https://github.com/sccn/labstreaminglayer).
 
 Technically, this package supports all EEG recorders capable of streaming to LSL, however, at the moment
@@ -13,6 +15,9 @@ amplifier is changed, one wants to make sure the correct reference is chosen. As
 reference subtraction this is not necessary, but can easily be activated for other amplifiers changing the two
 indicated lines in `bstadlbauer.p300.analyzer.data.RecordedData` (lines are commented at the moment).
 
+In addition to this project a [speller](https://github.com/bstadlbauer/lsl-p300-speller), which provides the required
+format via LSL. However, any speller using LSL should work.
+
 ## Installation
 
 ### Dependencies
@@ -20,21 +25,19 @@ This project uses [poetry](https://python-poetry.org/) to manage its dependencie
 poetry for you operating system. The whole projects supports `python>=3.6.1`.
 
 ### Installing the package
-Run the following to install the `bstadlbauer.p300` package:
+Run the following to install the `bstadlbauer.p300speller` package:
 ```
-git clone https://github.org/bstadlbauer/p300
+git clone https://github.org/bstadlbauer/lsl-p300-speller
 poetry install
 ```
 which will setup a new virtual environment for the project and install the necessary dependencies.
 
 ## Getting Started
-The following entrypoints are available to start the speller as well as the analyzer. To use them, run either of
-the following:
+This project provides an entrypoint to start the analyzer, to do so - run the following after installation:
 ```
-poetry run start-speller
 poetry run start-analyzer
 ```
-For the analyzer, one needs to know the number of the electrode (in the LSL stream) that
+One needs to know the number of the electrode (in the LSL stream) that
 should be observed. Watch out, indexing for the electrodes starts at 0.
 
 ## Questions and Issues

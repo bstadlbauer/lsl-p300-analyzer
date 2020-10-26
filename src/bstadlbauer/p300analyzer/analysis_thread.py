@@ -5,7 +5,7 @@ from typing import Dict
 
 import numpy as np
 
-import bstadlbauer.p300.analyzer.data
+import bstadlbauer.p300analyzer.data
 
 
 class AnalysisThread(Thread):
@@ -28,7 +28,7 @@ class AnalysisThread(Thread):
 
     def __init__(
         self,
-        data: bstadlbauer.p300.analyzer.data.RecordedData,
+        data: bstadlbauer.p300analyzer.data.RecordedData,
         connect_dict: Dict,
         message_q: mp.Queue,
         plotting_queue: mp.Queue,

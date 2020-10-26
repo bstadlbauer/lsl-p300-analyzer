@@ -1,4 +1,4 @@
-from bstadlbauer.p300.analyzer.connect import ConnectorProc
+from bstadlbauer.p300analyzer.connect import ConnectorProc
 
 
 def main():
