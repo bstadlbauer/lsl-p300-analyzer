@@ -16,9 +16,9 @@ class BCNIDataServer(mp.Process):
 
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, subject_number: int):
         mp.Process.__init__(self)
-        self.data = BCNIData(filename)
+        self.data = BCNIData(subject_number)
 
     # noinspection PyAttributeOutsideInit
     def second_init(self):

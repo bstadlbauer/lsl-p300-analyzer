@@ -1,6 +1,11 @@
 import os
+import ssl
+import urllib.request
 
+import certifi
 from scipy import io
+
+from testserver.constants import BNCI_CACHE_DIR, BNCI_HORIZON_DATA_URL
 
 
 class BCNIData(object):
@@ -11,8 +16,11 @@ class BCNIData(object):
 
     """
 
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, subject_number: int):
+        self.subject_number = subject_number
+        self.filename = os.path.join(BNCI_CACHE_DIR, f"s{subject_number}.mat")
+        print(self.filename)
+        self._download_data_if_not_present(subject_number)
         self.counter = 0
 
         self.timestamps = []
@@ -24,12 +32,24 @@ class BCNIData(object):
         self.samplerate = 256  # Hz
         self.num_channels = None
 
-        self.file_location = None
-        self.prefix = None
-        self.path = None
         self.matrix = None
 
         self.load_file()
+
+    def _download_data_if_not_present(self, subject_number: int):
+        if not os.path.isfile(self.filename):
+            os.makedirs(os.path.dirname(self.filename), exist_ok=True)
+            url = BNCI_HORIZON_DATA_URL.format(subject_number=subject_number)
+            print(
+                f"No data for subject {subject_number} found. Downloading data from {url} to {self.filename}. "
+                f"This data is open access. For more information visit: "
+                f"http://bnci-horizon-2020.eu/database/data-sets (dataset 003-2015)"
+            )
+            with urllib.request.urlopen(url, context=ssl.create_default_context(cafile=certifi.where())) as response:
+                subject_data = response.read()
+            with open(self.filename, "wb") as out_file:
+                out_file.write(subject_data)
+            print("Done.")
 
     def get_timestamp(self):
         return self.timestamps[self.counter % self.length]
@@ -47,12 +67,8 @@ class BCNIData(object):
         self.counter += 1
 
     def load_file(self):
-        self.file_location = os.path.dirname(__file__)
-        self.prefix = "/BNCI Horizon - Guger 2009/Data/"
-
-        self.path = self.file_location + self.prefix + self.filename
-
-        self.matrix = io.loadmat(self.path)["s1"][0][0][1]  # axis: [filename][0][0][train/test]
+        # axis: [filename][0][0][train/test]
+        self.matrix = io.loadmat(self.filename)[f"s{self.subject_number}"][0][0][1]
         self.timestamps = self.matrix[0]
         self.eeg_data = self.matrix[1:9]
 
