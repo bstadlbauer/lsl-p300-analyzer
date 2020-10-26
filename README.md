@@ -54,7 +54,8 @@ To ensure consistent formatting and linting pre-commit hooks (managed through [`
 are used.
 
 ### Testserver
-For convenience, a testserver is available in the `testserver` package. It uses open-access data from BNCI Horizon. To
+For convenience, a testserver is available in the `testserver` package. It uses open-access data from BNCI Horizon,
+upon first start the test data will be downloaded to `$XDG_CACHE_DIR/bstadlbauer/p300/testserver/003-2015`. To
 start the server simply run the following:
 ```
 poetry shell
