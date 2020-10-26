@@ -12,3 +12,10 @@ is not given, one can subtract a channel changing analyzer.data.RecordedData.app
 to do this are in there but commented.
 
 """
+
+from multiprocessing import freeze_support
+
+import matplotlib
+
+matplotlib.use('Qt5Agg')  # MUST BE CALLED BEFORE IMPORTING matplotlib.pyplot
+freeze_support()

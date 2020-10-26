@@ -75,12 +75,15 @@ class ConfigParams(object):
         """Loads all configuration parameters from self.config_file_path"""
         self.config_parser.read(self.config_file_path.get())
 
+        images_folder_fallback = os.path.join(os.path.dirname(__file__), 'number_images')
+        flash_image_fallback = os.path.join(os.path.dirname(__file__), 'flash_images', 'einstein.jpg')
+
         self.imagesize.set(self.config_parser.getint('Parameters', 'Imagesize'))
-        self.images_folder_path.set(self.config_parser.get('Parameters', 'Images Folder Path'))
-        self.flash_image_path.set(self.config_parser.get('Parameters', 'Flash image path'))
+        self.images_folder_path.set(self.config_parser.get('Parameters', 'Images Folder Path', fallback=images_folder_fallback))
+        self.flash_image_path.set(self.config_parser.get('Parameters', 'Flash image path', fallback=flash_image_fallback))
         self.number_of_rows.set(self.config_parser.getint('Parameters', 'Number of Rows'))
         self.number_of_columns.set(self.config_parser.getint('Parameters', 'Number of Columns'))
-        self.lsl_streamname.set(self.config_parser.get('Parameters', 'LSL streamname'))
+        self.lsl_streamname.set(self.config_parser.get('Parameters', 'LSL Streamname'))
         self.flash_mode.set(self.config_parser.getint('Parameters', 'Flash Mode'))
         self.flash_duration.set(self.config_parser.getint('Parameters', 'Flash duration'))
         self.break_duration.set(self.config_parser.getint('Parameters', 'Break duration'))
@@ -480,3 +483,10 @@ class P300Window(object):
     def close_window(self):
         self.parent.enable_all_widgets()
         self.master.destroy()
+
+
+def main():
+    from tkinter import Tk
+    root = Tk()
+    MainWindow(root)
+    root.mainloop()
