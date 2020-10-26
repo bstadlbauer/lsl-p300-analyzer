@@ -10,6 +10,7 @@ class BCNIData(object):
         filename: Filename to load, e.g. 's1.mat'
 
     """
+
     def __init__(self, filename):
         self.filename = filename
         self.counter = 0
@@ -19,7 +20,7 @@ class BCNIData(object):
         self.markers = []
         self.target = []
         self.length = None
-        self.flash_mode = 'Single Value'
+        self.flash_mode = "Single Value"
         self.samplerate = 256  # Hz
         self.num_channels = None
 
@@ -47,11 +48,11 @@ class BCNIData(object):
 
     def load_file(self):
         self.file_location = os.path.dirname(__file__)
-        self.prefix = '/BNCI Horizon - Guger 2009/Data/'
+        self.prefix = "/BNCI Horizon - Guger 2009/Data/"
 
         self.path = self.file_location + self.prefix + self.filename
 
-        self.matrix = io.loadmat(self.path)['s1'][0][0][1]  # axis: [filename][0][0][train/test]
+        self.matrix = io.loadmat(self.path)["s1"][0][0][1]  # axis: [filename][0][0][train/test]
         self.timestamps = self.matrix[0]
         self.eeg_data = self.matrix[1:9]
 
