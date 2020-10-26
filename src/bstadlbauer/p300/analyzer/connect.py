@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from pylsl import StreamInlet, resolve_stream
 
-from analyzer.analizer_gui import MainWindow
-from analyzer.analysis_thread import AnalysisThread
-from analyzer.data import RecordedData
-from analyzer.lsl_receiver_thread import LSLReceiverThread
+from bstadlbauer.p300.analyzer.analizer_gui import MainWindow
+from bstadlbauer.p300.analyzer.analysis_thread import AnalysisThread
+from bstadlbauer.p300.analyzer.data import RecordedData
+from bstadlbauer.p300.analyzer.lsl_receiver_thread import LSLReceiverThread
 
 
 class ConnectorProc(object):

@@ -5,6 +5,11 @@ description = "Live visualization of the P300 paradigm"
 authors = ["Bernhard Stadlbauer <b.stadlbauer@gmx.net>"]
 license = "GNU General Public License v3"
 
+packages = [
+    { include = "bstadlbauer", from = "src" },
+]
+
+
 [tool.poetry.dependencies]
 python = "^3.6"
 numpy = "^1.19.2"
@@ -15,6 +20,11 @@ scipy = "^1.5.3"
 PyQt5 = "^5.15.1"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+start-speller = 'bstadlbauer.p300.speller.p300_speller:main'
+start-analyzer = 'bstadlbauer.p300.analyzer.main:main'
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

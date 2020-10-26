@@ -1,6 +1,6 @@
 import numpy as np
 
-from analyzer.custom_filter import CustomBPFilter
+from bstadlbauer.p300.analyzer.custom_filter import CustomBPFilter
 
 
 class RecordedData(object):
