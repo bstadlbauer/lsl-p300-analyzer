@@ -1,3 +1,10 @@
+if __name__ == '__main__':
+    import platform
+    import multiprocessing
+
+    if platform.system() == "Darwin":
+        multiprocessing.set_start_method('spawn')
+
 from multiprocessing import freeze_support
 
 
