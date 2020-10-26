@@ -38,8 +38,7 @@ class RecordedData(object):
     def append_eeg_sample(self, sample):
         if self.filter_bool == 1:
             if self.bandpass is None:
-                self.bandpass = CustomBPFilter(self.samplerate,
-                                               self.num_chan, 4, 1, 30)
+                self.bandpass = CustomBPFilter(self.samplerate, self.num_chan, 4, 1, 30)
             numpy_sample = np.array(sample)
             numpy_sample = numpy_sample[np.newaxis, :]
             filtered_sample = self.bandpass.filter(numpy_sample) * 1e6
@@ -92,7 +91,7 @@ class RecordedData(object):
         markers_temp = []
 
         for ind in marker_indices:
-            trials_temp.append(eeg_np[ind:ind + self.samplerate, :])
+            trials_temp.append(eeg_np[ind : ind + self.samplerate, :])
             markers_temp.append([self.marker_data[ind], self.target[ind]])
 
         self.trials = np.array(trials_temp)
