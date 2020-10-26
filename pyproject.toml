@@ -11,7 +11,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.1"
 numpy = "^1.19.2"
 pylsl = "^1.13.6"
 Pillow = "^8.0.1"
@@ -20,11 +20,17 @@ scipy = "^1.5.3"
 PyQt5 = "^5.15.1"
 
 [tool.poetry.dev-dependencies]
+pre-commit = "^2.7.1"
 
 [tool.poetry.scripts]
 start-speller = 'bstadlbauer.p300.speller.p300_speller:main'
 start-analyzer = 'bstadlbauer.p300.analyzer.main:main'
 
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = 'black'
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
