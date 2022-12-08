@@ -19,7 +19,7 @@ matplotlib = "^3.3.2"
 scipy = "^1.5.3"
 PyQt5 = "^5.15.1"
 xdg = "^4.0.1"
-certifi = "^2020.6.20"
+certifi = "^2022.12.7"
 
 [tool.poetry.dev-dependencies]
 pre-commit = "^2.7.1"
